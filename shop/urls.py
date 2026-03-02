@@ -1,0 +1,39 @@
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import UserProfileView
+
+# Import all the ViewSets and the new Auth Views
+from .views import (
+    ProductViewSet, 
+    OrderViewSet, 
+    CategoryViewSet,
+    RegisterView,
+    VerifyOTPView,
+    PasswordResetRequestView,
+    PasswordResetConfirmView,
+    create_review,  # 1. NEW: Import the review view we just made
+    SavedAddressViewSet
+)
+
+# 1. Router for Data Models
+router = DefaultRouter()
+router.register(r'products', ProductViewSet, basename='product')
+router.register(r'orders', OrderViewSet, basename='order')
+router.register(r'categories', CategoryViewSet, basename='category')
+router.register(r'addresses', SavedAddressViewSet, basename='address')
+
+# 2. URL Patterns
+urlpatterns = [
+    # Include the router URLs
+    path('', include(router.urls)),
+    
+    # 2. NEW: The Review Endpoint (Must match the Next.js axios call)
+    path('products/<int:pk>/review/', create_review, name='create-review'),
+    
+    # Custom Authentication & OTP URLs
+    path('auth/register/', RegisterView.as_view(), name='register'),
+    path('auth/me/', UserProfileView.as_view(), name='user-profile'),
+    path('auth/verify-otp/', VerifyOTPView.as_view(), name='verify-otp'),
+    path('auth/password-reset-request/', PasswordResetRequestView.as_view(), name='password-reset-request'),
+    path('auth/password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
+]
