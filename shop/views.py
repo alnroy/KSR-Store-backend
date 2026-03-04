@@ -80,8 +80,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Order.objects.filter(user=self.request.user).order_by('-created_at')
 
     def get_permissions(self):
-        if self.action == 'create':
-            return [AllowAny()]
+        
         return [IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
