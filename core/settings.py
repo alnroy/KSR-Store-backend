@@ -147,11 +147,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-# 1. The new email address you just created
-EMAIL_HOST_USER = 'noreply.profishgear@gmail.com' 
 
-# 2. The 16-character App Password (no spaces)
-EMAIL_HOST_PASSWORD = 'labfsltkwqiwlsgm' 
 
 # 3. What the user sees in their "From" field
 DEFAULT_FROM_EMAIL = 'ProFish Gear <noreply.profishgear@gmail.com>'
