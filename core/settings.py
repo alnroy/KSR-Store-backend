@@ -141,9 +141,21 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
 }
-# Prints emails to the terminal for local testing
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'support@profishgear.com'
+# Prints emails to the terminal for local testing# Switch to the real SMTP backend
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# 1. The new email address you just created
+EMAIL_HOST_USER = 'noreply.profishgear@gmail.com' 
+
+# 2. The 16-character App Password (no spaces)
+EMAIL_HOST_PASSWORD = 'labfsltkwqiwlsgm' 
+
+# 3. What the user sees in their "From" field
+DEFAULT_FROM_EMAIL = 'ProFish Gear <noreply.profishgear@gmail.com>'
+
 
 # settings.py
 

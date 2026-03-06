@@ -51,7 +51,7 @@ class RegisterView(generics.CreateAPIView):
         send_otp_email(user.email, otp)
 
         return Response({
-            "message": "Registration successful. Check your email/terminal for the OTP to activate your account."
+            "message": "Registration successful! A 6-digit OTP has been sent to your email. Please verify to activate your account."
         }, status=status.HTTP_201_CREATED)
 
 
