@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.utils import timezone
-import timedelta
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -23,12 +22,14 @@ class Product(models.Model):
     
     image = models.ImageField(upload_to='products/')
     stock = models.PositiveIntegerField(default=0)
-    
+    is_hero_marquee = models.BooleanField(default=False)
     # --- COMBOS ---
     # A simple switch. If True, it shows up on your special "Combos" page.
     is_combo = models.BooleanField("Is this a Combo Package?", default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
+    brand_name = models.CharField(max_length=100, blank=True, null=True)
+    specifications = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.name
@@ -119,3 +120,21 @@ class SavedAddress(models.Model):
 
     def __str__(self):
         return f"{self.full_name} - {self.address[:30]}"
+
+class ProductAttribute(models.Model):
+    """Examples: Length, Color, Reel Series, Weight"""
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+class ProductVariant(models.Model):
+    """The specific choice: '6ft', 'Blue', '3000 Series'"""
+    product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
+    attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE)
+    value = models.CharField(max_length=100) # e.g., '6ft'
+    price_modifier = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    stock = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.attribute.name}: {self.value}"

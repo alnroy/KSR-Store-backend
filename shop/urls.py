@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import UserProfileView
-
+from . import views  # <--- ADD THIS LINE
 # Import all the ViewSets and the new Auth Views
 from .views import (
     ProductViewSet, 
@@ -29,6 +29,7 @@ urlpatterns = [
     
     # 2. NEW: The Review Endpoint (Must match the Next.js axios call)
     path('products/<int:pk>/review/', create_review, name='create-review'),
+    path('attributes/', views.AttributeListView.as_view(), name='attribute-list'),
     
     # Custom Authentication & OTP URLs
     path('auth/register/', RegisterView.as_view(), name='register'),

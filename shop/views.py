@@ -8,7 +8,8 @@ from .serializers import (
     ProductSerializer, 
     OrderSerializer, 
     RegisterSerializer,
-    SavedAddressSerializer
+    SavedAddressSerializer,
+    ProductAttribute
 )
 import random
 from django.core.mail import send_mail
@@ -30,7 +31,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .permissions import IsAdminUserOrReadOnly 
 import json
-
+from .serializers import ProductAttributeSerializer
 
 class RegisterView(generics.CreateAPIView):
     """Handles User Registration and sends the initial OTP."""
@@ -54,7 +55,10 @@ class RegisterView(generics.CreateAPIView):
             "message": "Registration successful! A 6-digit OTP has been sent to your email. Please verify to activate your account."
         }, status=status.HTTP_201_CREATED)
 
-
+class AttributeListView(generics.ListAPIView):
+    queryset = ProductAttribute.objects.all()
+    serializer_class = ProductAttributeSerializer
+    # Optional: permission_classes = [IsAdminUser]
 
 class CategoryViewSet(viewsets.ModelViewSet): # Upgraded from ReadOnlyModelViewSet
     queryset = Category.objects.all()

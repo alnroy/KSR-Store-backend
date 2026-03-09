@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html  # <--- This fixes the Unresolved Import
-from .models import Category, Product, Order
+from .models import Category, Product, Order, ProductAttribute, ProductVariant
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -59,3 +59,14 @@ class OrderAdmin(admin.ModelAdmin):
         if obj.payment_screenshot:
             return format_html('<img src="{}" style="max-width: 300px;" />', obj.payment_screenshot.url)
         return "No Payment Uploaded"
+
+# This allows adding variants directly inside the Product page
+class ProductVariantInline(admin.TabularInline):
+    model = ProductVariant
+    extra = 1 # Number of empty rows to show by default
+    fields = ['attribute', 'value', 'price_modifier', 'stock']
+
+
+@admin.register(ProductAttribute)
+class ProductAttributeAdmin(admin.ModelAdmin):
+    list_display = ['name']
