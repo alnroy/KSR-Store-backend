@@ -209,8 +209,12 @@ class OrderSerializer(serializers.ModelSerializer):
             OrderItem.objects.create(order=order, **item_data)
             
             # Update stock
-            product.stock -= quantity
-            product.save()
+            if product:
+                product.stock -= quantity
+                if product.stock <= 0:
+                    product.delete()
+                else:
+                    product.save()
             
         return order
 

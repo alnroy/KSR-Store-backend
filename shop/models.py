@@ -77,8 +77,8 @@ class Order(models.Model):
 class OrderItem(models.Model):
     # Links to the specific order
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    # Links to the specific product (using PROTECT so you can't delete a product if an order relies on it)
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    # Links to the specific product (using SET_NULL so you can delete out-of-stock products safely)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     
     quantity = models.PositiveIntegerField(default=1)
     # We save the price at the time of purchase in case you change the product price later!
