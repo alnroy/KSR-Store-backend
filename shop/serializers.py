@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Category, Product, Order, OrderItem, Review, SavedAddress, ProductVariant, ProductAttribute
+from .models import Category, Product, Order, OrderItem, Review, SavedAddress, ProductVariant, ProductAttribute, ProductImage
 import json
 
 # ==========================================
@@ -72,6 +72,11 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image']
+
 class ReviewSerializer(serializers.ModelSerializer):
     user_name = serializers.ReadOnlyField(source='user.username')
 
@@ -84,13 +89,14 @@ class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     variants = ProductVariantSerializer(many=True, read_only=True) 
     reviews = ReviewSerializer(many=True, read_only=True)
+    images = ProductImageSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'offer_price', 'is_combo', 
-            'image', 'stock', 'category', 'category_name', 'reviews', 'average_rating', 'variants','is_hero_marquee',
+            'image', 'images', 'stock', 'category', 'category_name', 'reviews', 'average_rating', 'variants','is_hero_marquee',
         ]
 
     def get_average_rating(self, obj):
@@ -104,6 +110,12 @@ class ProductSerializer(serializers.ModelSerializer):
         variants_raw = request.data.get('variants_data') # Stringified JSON from Admin Dashboard
         
         product = Product.objects.create(**validated_data)
+
+        # Handle multiple images
+        if request and request.FILES:
+            uploaded_images = request.FILES.getlist('uploaded_images')
+            for img in uploaded_images:
+                ProductImage.objects.create(product=product, image=img)
 
         if variants_raw:
             try:
@@ -127,6 +139,12 @@ class ProductSerializer(serializers.ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+
+        # Handle multiple images on update
+        if request and request.FILES:
+            uploaded_images = request.FILES.getlist('uploaded_images')
+            for img in uploaded_images:
+                ProductImage.objects.create(product=instance, image=img)
 
         if variants_raw:
             try:
