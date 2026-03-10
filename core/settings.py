@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'alnroy.pythonanywhere.com']
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -28,8 +28,6 @@ SECRET_KEY = 'django-insecure-v#xyk0&0zxcxpdd+5#)sc^4+1*(b0fsp7%erq0&bd8h&y1yc41
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
 
 
 # Application definition
