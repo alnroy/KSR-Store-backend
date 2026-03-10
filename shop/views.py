@@ -65,13 +65,13 @@ class CategoryViewSet(viewsets.ModelViewSet): # Upgraded from ReadOnlyModelViewS
     serializer_class = CategorySerializer
     permission_classes = [IsAdminUserOrReadOnly] # 2. Applied Security Rule
 
-class ProductViewSet(viewsets.ModelViewSet): # Upgraded from ReadOnlyModelViewSet
+class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [AllowAny] # 2. Applied Security Rule
+    permission_classes = [IsAdminUserOrReadOnly]  # Read is public, write/delete is admin-only
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
-    search_fields = ['name', 'description']
-    filterset_fields = ['category', 'category__name'] 
+    search_fields = ['name', 'description', 'brand_name']
+    filterset_fields = ['category', 'category__name']
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
