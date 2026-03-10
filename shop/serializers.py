@@ -167,15 +167,19 @@ class ProductSerializer(serializers.ModelSerializer):
 # ==========================================
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.ReadOnlyField(source='product.name')
+    # Use stored snapshot first; only fall back to live product.name if snapshot is empty
+    product_name = serializers.SerializerMethodField()
     product_image = serializers.ImageField(source='product.image', read_only=True)
     product_description = serializers.ReadOnlyField(source='product.description')
     product_category = serializers.ReadOnlyField(source='product.category.name')
 
+    def get_product_name(self, obj):
+        # Use snapshotted name first (survives product deletion)
+        return obj.product_name or (obj.product.name if obj.product else 'Deleted Product')
+
     class Meta:
         model = OrderItem
-        # Include 'selected_options' so the Admin knows what size/color was picked
-        fields = ['product', 'product_name', 'product_image', 'product_description', 
+        fields = ['product', 'product_name', 'product_image', 'product_description',
                   'product_category', 'quantity', 'price', 'selected_options']
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -203,19 +207,23 @@ class OrderSerializer(serializers.ModelSerializer):
         order = Order.objects.create(**validated_data)
 
         for item_data in items_data:
-            product = item_data['product']
-            quantity = item_data['quantity']
-            
+            product = item_data.get('product')
+            quantity = item_data.get('quantity', 1)
+
+            # Snapshot the product name at purchase time
+            if product:
+                item_data['product_name'] = product.name
+
             OrderItem.objects.create(order=order, **item_data)
-            
-            # Update stock
+
+            # Update stock; delete product if it runs out
             if product:
                 product.stock -= quantity
                 if product.stock <= 0:
                     product.delete()
                 else:
                     product.save()
-            
+
         return order
 
 class SavedAddressSerializer(serializers.ModelSerializer):

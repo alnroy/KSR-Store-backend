@@ -77,8 +77,10 @@ class Order(models.Model):
 class OrderItem(models.Model):
     # Links to the specific order
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    # Links to the specific product (using SET_NULL so you can delete out-of-stock products safely)
+    # Links to the specific product (SET_NULL so deleted products don't block order history)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
+    # Snapshot the product name at purchase time so it's preserved even if product is deleted
+    product_name = models.CharField(max_length=200, blank=True, default='')
     
     quantity = models.PositiveIntegerField(default=1)
     # We save the price at the time of purchase in case you change the product price later!
@@ -86,7 +88,8 @@ class OrderItem(models.Model):
     selected_options = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
-        return f"{self.quantity} x {self.product.name} (Order {self.order.id})"
+        name = self.product_name or (self.product.name if self.product else 'Deleted Product')
+        return f"{self.quantity} x {name} (Order {self.order.id})"
     
 class OTPRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
