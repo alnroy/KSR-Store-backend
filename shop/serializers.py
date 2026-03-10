@@ -1,7 +1,26 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Category, Product, Order, OrderItem, Review, SavedAddress, ProductVariant, ProductAttribute, ProductImage
+from .models import Brand, Category, Product, Order, OrderItem, Review, SavedAddress, ProductVariant, ProductAttribute, ProductImage
 import json
+
+# ==========================================
+# 0. BRAND SERIALIZER
+# ==========================================
+
+class BrandSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField()
+
+    def get_logo_url(self, obj):
+        if obj.logo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
+            return obj.logo.url
+        return None
+
+    class Meta:
+        model = Brand
+        fields = ['id', 'name', 'logo', 'logo_url']
 
 # ==========================================
 # 1. ATTRIBUTE & VARIANT SERIALIZERS

@@ -4,6 +4,7 @@ from .views import UserProfileView
 from . import views  # <--- ADD THIS LINE
 # Import all the ViewSets and the new Auth Views
 from .views import (
+    BrandViewSet,
     ProductViewSet, 
     OrderViewSet, 
     CategoryViewSet,
@@ -11,12 +12,13 @@ from .views import (
     VerifyOTPView,
     PasswordResetRequestView,
     PasswordResetConfirmView,
-    create_review,  # 1. NEW: Import the review view we just made
+    create_review,
     SavedAddressViewSet
 )
 
 # 1. Router for Data Models
 router = DefaultRouter()
+router.register(r'brands', BrandViewSet, basename='brand')
 router.register(r'products', ProductViewSet, basename='product')
 router.register(r'orders', OrderViewSet, basename='order')
 router.register(r'categories', CategoryViewSet, basename='category')

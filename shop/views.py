@@ -2,8 +2,9 @@ from rest_framework import viewsets, filters, generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.models import User
-from .models import Category, Product, Order, Review, OrderItem, SavedAddress
+from .models import Brand, Category, Product, Order, Review, OrderItem, SavedAddress
 from .serializers import (
+    BrandSerializer,
     CategorySerializer, 
     ProductSerializer, 
     OrderSerializer, 
@@ -60,10 +61,15 @@ class AttributeListView(generics.ListAPIView):
     serializer_class = ProductAttributeSerializer
     # Optional: permission_classes = [IsAdminUser]
 
-class CategoryViewSet(viewsets.ModelViewSet): # Upgraded from ReadOnlyModelViewSet
+class BrandViewSet(viewsets.ModelViewSet):
+    queryset = Brand.objects.all()
+    serializer_class = BrandSerializer
+    permission_classes = [IsAdminUserOrReadOnly]  # Public read, admin write/delete
+
+class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAdminUserOrReadOnly] # 2. Applied Security Rule
+    permission_classes = [IsAdminUserOrReadOnly]
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
