@@ -76,7 +76,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAdminUserOrReadOnly]  # Read is public, write/delete is admin-only
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
-    search_fields = ['name', 'description', 'brand_name']
+    search_fields = ['name', 'description', 'brand__name']
     filterset_fields = ['category', 'category__name']
 
 class OrderViewSet(viewsets.ModelViewSet):

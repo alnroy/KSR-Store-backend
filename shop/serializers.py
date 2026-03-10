@@ -106,6 +106,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
+    brand_name = serializers.ReadOnlyField(source='brand.name')
     variants = ProductVariantSerializer(many=True, read_only=True) 
     reviews = ReviewSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
@@ -115,7 +116,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'offer_price', 'is_combo', 
-            'image', 'images', 'stock', 'category', 'category_name', 'reviews', 'average_rating', 'variants','is_hero_marquee',
+            'image', 'images', 'stock', 'category', 'category_name', 'brand', 'brand_name', 'reviews', 'average_rating', 'variants','is_hero_marquee',
         ]
 
     def get_average_rating(self, obj):

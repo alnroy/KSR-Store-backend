@@ -35,7 +35,7 @@ class Product(models.Model):
     is_combo = models.BooleanField("Is this a Combo Package?", default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
-    brand_name = models.CharField(max_length=100, blank=True, null=True)
+    brand = models.ForeignKey(Brand, related_name='products', on_delete=models.SET_NULL, null=True, blank=True)
     specifications = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
