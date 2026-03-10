@@ -1,6 +1,17 @@
 from django.contrib import admin
-from django.utils.html import format_html  # <--- This fixes the Unresolved Import
-from .models import Category, Product, Order, ProductAttribute, ProductVariant
+from django.utils.html import format_html
+from .models import Category, Product, Order, ProductAttribute, ProductVariant, Brand, OTPRecord, Review, SavedAddress
+
+@admin.register(Brand)
+class BrandAdmin(admin.ModelAdmin):
+    list_display = ('display_logo', 'name')
+    search_fields = ('name',)
+
+    def display_logo(self, obj):
+        if obj.logo:
+            return format_html('<img src="{}" style="width: 50px; height: 50px; object-fit: contain;" />', obj.logo.url)
+        return "No Logo"
+    display_logo.short_description = 'Logo'
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -8,19 +19,16 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    # This defines what the admin sees in the list view
     list_display = ('display_image', 'name', 'category', 'price', 'stock_status')
     list_filter = ('category',)
     search_fields = ('name',)
 
-    # 1. Show the actual image in the list!
     def display_image(self, obj):
         if obj.image:
             return format_html('<img src="{}" style="width: 50px; height: 50px; border-radius: 8px;" />', obj.image.url)
         return "No Image"
     display_image.short_description = 'Preview'
 
-    # 2. Make stock levels easy to read (Green for good, Red for low)
     def stock_status(self, obj):
         if obj.stock <= 5:
             return format_html('<b style="color: red;">Low Stock: {}</b>', obj.stock)
@@ -29,16 +37,11 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    # 'status' MUST be here for 'list_editable' to work
     list_display = ('id', 'full_name', 'total_amount', 'status', 'colored_status', 'view_payment')
-    
-    # This allows the non-tech admin to change status with one click
     list_editable = ('status',) 
-    
     readonly_fields = ('payment_preview',)
 
     def colored_status(self, obj):
-        # This acts as a visual guide next to the editable dropdown
         colors = {
             'PAID': 'green',
             'PENDING': 'orange',
@@ -60,13 +63,21 @@ class OrderAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" style="max-width: 300px;" />', obj.payment_screenshot.url)
         return "No Payment Uploaded"
 
-# This allows adding variants directly inside the Product page
-class ProductVariantInline(admin.TabularInline):
-    model = ProductVariant
-    extra = 1 # Number of empty rows to show by default
-    fields = ['attribute', 'value', 'price_modifier', 'stock']
-
-
 @admin.register(ProductAttribute)
 class ProductAttributeAdmin(admin.ModelAdmin):
     list_display = ['name']
+
+@admin.register(OTPRecord)
+class OTPRecordAdmin(admin.ModelAdmin):
+    list_display = ('user', 'otp', 'created_at', 'is_used')
+    list_filter = ('is_used', 'created_at')
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ('product', 'user', 'rating', 'created_at')
+    list_filter = ('rating', 'created_at')
+
+@admin.register(SavedAddress)
+class SavedAddressAdmin(admin.ModelAdmin):
+    list_display = ('user', 'full_name', 'email', 'address')
+    search_fields = ('full_name', 'email', 'user__username')
