@@ -123,7 +123,7 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'price', 'offer_price', 'is_combo', 
             'image', 'images', 'stock', 'category', 'category_name', 'brand', 'brand_name', 
-            'reviews', 'average_rating', 'variants','is_hero_marquee', 'shoppable_videos'
+            'reviews', 'average_rating', 'variants','is_hero_marquee', 'shoppable_videos', 'created_at'
         ]
 
     def get_average_rating(self, obj):
