@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Category, Product, Order, ProductAttribute, ProductVariant, Brand, OTPRecord, Review, SavedAddress
+from .models import Category, Product, Order, ProductAttribute, ProductVariant, Brand, OTPRecord, Review, SavedAddress, ShoppableVideo
 
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
@@ -81,3 +81,9 @@ class ReviewAdmin(admin.ModelAdmin):
 class SavedAddressAdmin(admin.ModelAdmin):
     list_display = ('user', 'full_name', 'email', 'address')
     search_fields = ('full_name', 'email', 'user__username')
+
+@admin.register(ShoppableVideo)
+class ShoppableVideoAdmin(admin.ModelAdmin):
+    list_display = ('title', 'product', 'created_at')
+    list_filter = ('product', 'created_at')
+    search_fields = ('title', 'product__name')

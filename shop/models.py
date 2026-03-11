@@ -156,3 +156,13 @@ class ProductVariant(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.attribute.name}: {self.value}"
+
+class ShoppableVideo(models.Model):
+    title = models.CharField(max_length=200)
+    video_file = models.FileField(upload_to='videos/')
+    # Link this video to a specific product
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='shoppable_videos')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Video: {self.title} for {self.product.name}"

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Brand, Category, Product, Order, OrderItem, Review, SavedAddress, ProductVariant, ProductAttribute, ProductImage
+from .models import Brand, Category, Product, Order, OrderItem, Review, SavedAddress, ProductVariant, ProductAttribute, ProductImage, ShoppableVideo
 import json
 
 # ==========================================
@@ -104,19 +104,26 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'user_name', 'product', 'rating', 'comment', 'created_at']
         read_only_fields = ['user']
 
+class ShoppableVideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShoppableVideo
+        fields = ['id', 'title', 'video_file', 'product', 'created_at']
+
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
     brand_name = serializers.ReadOnlyField(source='brand.name')
     variants = ProductVariantSerializer(many=True, read_only=True) 
     reviews = ReviewSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
+    shoppable_videos = ShoppableVideoSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'offer_price', 'is_combo', 
-            'image', 'images', 'stock', 'category', 'category_name', 'brand', 'brand_name', 'reviews', 'average_rating', 'variants','is_hero_marquee',
+            'image', 'images', 'stock', 'category', 'category_name', 'brand', 'brand_name', 
+            'reviews', 'average_rating', 'variants','is_hero_marquee', 'shoppable_videos'
         ]
 
     def get_average_rating(self, obj):

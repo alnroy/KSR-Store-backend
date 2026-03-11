@@ -2,7 +2,7 @@ from rest_framework import viewsets, filters, generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.models import User
-from .models import Brand, Category, Product, Order, Review, OrderItem, SavedAddress
+from .models import Brand, Category, Product, Order, Review, OrderItem, SavedAddress, ShoppableVideo
 from .serializers import (
     BrandSerializer,
     CategorySerializer, 
@@ -10,7 +10,8 @@ from .serializers import (
     OrderSerializer, 
     RegisterSerializer,
     SavedAddressSerializer,
-    ProductAttribute
+    ProductAttribute,
+    ShoppableVideoSerializer
 )
 import random
 from django.core.mail import send_mail
@@ -346,3 +347,8 @@ class SavedAddressViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Automatically attach the logged-in user to the new address
         serializer.save(user=self.request.user)
+
+class ShoppableVideoViewSet(viewsets.ModelViewSet):
+    queryset = ShoppableVideo.objects.all()
+    serializer_class = ShoppableVideoSerializer
+    permission_classes = [IsAdminUserOrReadOnly]
