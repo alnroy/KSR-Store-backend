@@ -61,11 +61,26 @@ class Order(models.Model):
         ('PAID', 'Paid'),
         ('FAILED','failed'),
         ('SHIPPED', 'Shipped'),
+        ('DELIVERED', 'Delivered'),
+        ('CLOSED', 'Closed'),
     ]
 
     full_name = models.CharField(max_length=200)
     email = models.EmailField()
-    address = models.TextField()
+    
+    # Structured Address Fields
+    mobile_number = models.CharField(max_length=20, blank=True, null=True)
+    country_region = models.CharField(max_length=100, blank=True, null=True)
+    house_info = models.CharField("Flat, House no, Building, etc.", max_length=255, blank=True, null=True)
+    street_info = models.CharField("Area, Street, Sector, Village", max_length=255, blank=True, null=True)
+    landmark = models.CharField(max_length=255, blank=True, null=True)
+    pincode = models.CharField(max_length=20, blank=True, null=True)
+    city = models.CharField("Town/City", max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Legacy field for compatibility
+    address = models.TextField(blank=True, null=True)
+    
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     rejection_reason = models.TextField("Rejection Reason", blank=True, null=True)
     # Payment verification fields
@@ -79,18 +94,11 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.id} - {self.full_name}"
     
-# Add this right below your Order class in models.py
-
 class OrderItem(models.Model):
-    # Links to the specific order
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
-    # Links to the specific product (SET_NULL so deleted products don't block order history)
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
-    # Snapshot the product name at purchase time so it's preserved even if product is deleted
     product_name = models.CharField(max_length=200, blank=True, default='')
-    
     quantity = models.PositiveIntegerField(default=1)
-    # We save the price at the time of purchase in case you change the product price later!
     price = models.DecimalField(max_digits=10, decimal_places=2) 
     selected_options = models.JSONField(default=dict, blank=True)
 
@@ -105,52 +113,59 @@ class OTPRecord(models.Model):
     is_used = models.BooleanField(default=False)
 
     def is_valid(self):
-        # OTP expires after 10 minutes
         expiration_time = self.created_at + timezone.timedelta(minutes=10)
         return timezone.now() <= expiration_time and not self.is_used
     
 class Review(models.Model):
-    # Links to the product being reviewed
     product = models.ForeignKey(Product, related_name='reviews', on_delete=models.CASCADE)
-    # Links to the user who wrote the review
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    
-    # Restricts the rating to be strictly between 1 and 5 stars
     rating = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
     comment = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # CRITICAL: This prevents a user from reviewing the same product twice
         unique_together = ('product', 'user')
 
     def __str__(self):
         return f"{self.rating} Stars by {self.user.username} on {self.product.name}"
     
-# Add this near your other models
 class SavedAddress(models.Model):
-    # Links this address strictly to the logged-in user
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_addresses')
     full_name = models.CharField("Full Name", max_length=200)
     email = models.EmailField("Email")
-    address = models.TextField("Full Delivery Address")
+    
+    mobile_number = models.CharField(max_length=20, blank=True, null=True)
+    country_region = models.CharField(max_length=100, blank=True, null=True)
+    house_info = models.CharField("Flat, House no, Building, etc.", max_length=255, blank=True, null=True)
+    street_info = models.CharField("Area, Street, Sector, Village", max_length=255, blank=True, null=True)
+    landmark = models.CharField(max_length=255, blank=True, null=True)
+    pincode = models.CharField(max_length=20, blank=True, null=True)
+    city = models.CharField("Town/City", max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    
+    is_default = models.BooleanField(default=False)
+    
+    address = models.TextField("Full Delivery Address (Legacy)", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            SavedAddress.objects.filter(user=self.user).update(is_default=False)
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.full_name} - {self.address[:30]}"
+        return f"{self.full_name} - {self.city}, {self.state}"
 
 class ProductAttribute(models.Model):
-    """Examples: Length, Color, Reel Series, Weight"""
     name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
 
 class ProductVariant(models.Model):
-    """The specific choice: '6ft', 'Blue', '3000 Series'"""
     product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
     attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE)
-    value = models.CharField(max_length=100) # e.g., '6ft'
+    value = models.CharField(max_length=100)
     price_modifier = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     stock = models.PositiveIntegerField(default=0)
 
@@ -160,7 +175,6 @@ class ProductVariant(models.Model):
 class ShoppableVideo(models.Model):
     title = models.CharField(max_length=200)
     video_file = models.FileField(upload_to='videos/')
-    # Link this video to a specific product
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='shoppable_videos')
     created_at = models.DateTimeField(auto_now_add=True)
 

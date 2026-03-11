@@ -119,6 +119,14 @@ class OrderViewSet(viewsets.ModelViewSet):
             user=request.user,
             full_name=data.get('full_name'),
             email=data.get('email'),
+            mobile_number=data.get('mobile_number'),
+            country_region=data.get('country_region'),
+            house_info=data.get('house_info'),
+            street_info=data.get('street_info'),
+            landmark=data.get('landmark'),
+            pincode=data.get('pincode'),
+            city=data.get('city'),
+            state=data.get('state'),
             address=data.get('address'),
             total_amount=data.get('total_amount'),
             payment_screenshot=data.get('payment_screenshot')
@@ -130,12 +138,16 @@ class OrderViewSet(viewsets.ModelViewSet):
             OrderItem.objects.create(
                 order=order,
                 product=product,
+                product_name=product.name, # Snapshot name
                 quantity=item['quantity'],
                 price=item['price']
             )
             # Deduct stock
             product.stock -= item['quantity']
-            product.save()
+            if product.stock <= 0:
+                product.delete()
+            else:
+                product.save()
 
         return Response({"message": "Order placed successfully!", "id": order.id}, status=status.HTTP_201_CREATED)
 
