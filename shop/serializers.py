@@ -148,12 +148,16 @@ class ProductSerializer(serializers.ModelSerializer):
             try:
                 variants_list = json.loads(variants_raw)
                 for var in variants_list:
+                    price_mod = var.get('price_modifier')
+                    if price_mod == "" or price_mod is None:
+                        price_mod = 0
+                    
                     ProductVariant.objects.create(
                         product=product,
                         attribute_id=var['attribute'],
                         value=var['value'],
-                        price_modifier=var['price_modifier'],
-                        stock=var['stock']
+                        price_modifier=price_mod,
+                        stock=var.get('stock', 0)
                     )
             except (json.JSONDecodeError, KeyError, TypeError):
                 pass
@@ -178,12 +182,16 @@ class ProductSerializer(serializers.ModelSerializer):
                 variants_list = json.loads(variants_raw)
                 instance.variants.all().delete() # Simple overwrite strategy
                 for var in variants_list:
+                    price_mod = var.get('price_modifier')
+                    if price_mod == "" or price_mod is None:
+                        price_mod = 0
+                        
                     ProductVariant.objects.create(
                         product=instance,
                         attribute_id=var['attribute'],
                         value=var['value'],
-                        price_modifier=var['price_modifier'],
-                        stock=var['stock']
+                        price_modifier=price_mod,
+                        stock=var.get('stock', 0)
                     )
             except (json.JSONDecodeError, KeyError, TypeError):
                 pass
