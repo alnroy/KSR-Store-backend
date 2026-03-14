@@ -236,12 +236,12 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id', 'full_name', 'email', 'total_amount', 'payment_screenshot', 
+            'id', 'user', 'full_name', 'email', 'total_amount', 'transaction_id', 'payment_screenshot', 
             'status', 'rejection_reason', 'items', 'created_at',
             'mobile_number', 'country_region', 'house_info', 'street_info',
             'landmark', 'pincode', 'city', 'state', 'address'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
 
     def to_internal_value(self, data):
         items_data = data.get('items')

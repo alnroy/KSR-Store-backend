@@ -94,61 +94,32 @@ class OrderViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
-        # 1. Manually pull the data from request.data
-        data = request.data
-        items_json = data.get('items')
-
-        # 2. VALIDATION: Ensure items exist and parse them
+        # 1. Pre-validation and stock check
+        items_json = request.data.get('items')
         if not items_json:
             return Response({"error": "No items found in your cart."}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            items_data = json.loads(items_json)
-        except Exception:
+            # Handle both stringified and direct list/dict data
+            items_data = json.loads(items_json) if isinstance(items_json, str) else items_json
+            for item in items_data:
+                product = Product.objects.get(id=item['product'])
+                if product.stock < item['quantity']:
+                    return Response({"error": f"Out of stock: {product.name}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Product.DoesNotExist:
+            return Response({"error": "One or more products in your cart were not found."}, status=status.HTTP_404_NOT_FOUND)
+        except (json.JSONDecodeError, KeyError, TypeError):
             return Response({"error": "Invalid format for items."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 3. STOCK CHECK (The logic we built earlier)
-        for item in items_data:
-            product = Product.objects.get(id=item['product'])
-            if product.stock < item['quantity']:
-                return Response({"error": f"Out of stock: {product.name}"}, status=status.HTTP_400_BAD_REQUEST)
+        # 2. Let the serializer handle creation (including stock deduction logic in its create method)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save(user=request.user)
 
-        # 4. SAVE THE ORDER (Minus the items for now)
-        order = Order.objects.create(
-            user=request.user,
-            full_name=data.get('full_name'),
-            email=data.get('email'),
-            mobile_number=data.get('mobile_number'),
-            country_region=data.get('country_region'),
-            house_info=data.get('house_info'),
-            street_info=data.get('street_info'),
-            landmark=data.get('landmark'),
-            pincode=data.get('pincode'),
-            city=data.get('city'),
-            state=data.get('state'),
-            address=data.get('address'),
-            total_amount=data.get('total_amount'),
-            payment_screenshot=data.get('payment_screenshot')
-        )
-
-        # 5. CREATE ORDER ITEMS & DEDUCT STOCK
-        for item in items_data:
-            product = Product.objects.get(id=item['product'])
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                product_name=product.name, # Snapshot name
-                quantity=item['quantity'],
-                price=item['price']
-            )
-            # Deduct stock
-            product.stock -= item['quantity']
-            if product.stock <= 0:
-                product.delete()
-            else:
-                product.save()
-
-        return Response({"message": "Order placed successfully!", "id": order.id}, status=status.HTTP_201_CREATED)
+        return Response({
+            "message": "Order placed successfully!", 
+            "id": order.id
+        }, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
