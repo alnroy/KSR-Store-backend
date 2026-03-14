@@ -14,7 +14,8 @@ from .views import (
     PasswordResetConfirmView,
     create_review,
     SavedAddressViewSet,
-    ShoppableVideoViewSet
+    ShoppableVideoViewSet,
+    AttributeViewSet
 )
 
 # 1. Router for Data Models
@@ -25,6 +26,7 @@ router.register(r'orders', OrderViewSet, basename='order')
 router.register(r'categories', CategoryViewSet, basename='category')
 router.register(r'addresses', SavedAddressViewSet, basename='address')
 router.register(r'videos', ShoppableVideoViewSet, basename='video')
+router.register(r'attributes', AttributeViewSet, basename='attribute')
 
 # 2. URL Patterns
 urlpatterns = [
@@ -33,7 +35,6 @@ urlpatterns = [
     
     # 2. NEW: The Review Endpoint (Must match the Next.js axios call)
     path('products/<int:pk>/review/', create_review, name='create-review'),
-    path('attributes/', views.AttributeListView.as_view(), name='attribute-list'),
     
     # Custom Authentication & OTP URLs
     path('auth/register/', RegisterView.as_view(), name='register'),

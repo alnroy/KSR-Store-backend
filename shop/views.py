@@ -2,7 +2,7 @@ from rest_framework import viewsets, filters, generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth.models import User
-from .models import Brand, Category, Product, Order, Review, OrderItem, SavedAddress, ShoppableVideo
+from .models import Brand, Category, Product, Order, Review, OrderItem, SavedAddress, ShoppableVideo, ProductAttribute
 from .serializers import (
     BrandSerializer,
     CategorySerializer, 
@@ -10,7 +10,6 @@ from .serializers import (
     OrderSerializer, 
     RegisterSerializer,
     SavedAddressSerializer,
-    ProductAttribute,
     ShoppableVideoSerializer
 )
 import random
@@ -57,10 +56,10 @@ class RegisterView(generics.CreateAPIView):
             "message": "Registration successful! A 6-digit OTP has been sent to your email. Please verify to activate your account."
         }, status=status.HTTP_201_CREATED)
 
-class AttributeListView(generics.ListAPIView):
+class AttributeViewSet(viewsets.ModelViewSet):
     queryset = ProductAttribute.objects.all()
     serializer_class = ProductAttributeSerializer
-    # Optional: permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUserOrReadOnly]
 
 class BrandViewSet(viewsets.ModelViewSet):
     queryset = Brand.objects.all()
