@@ -105,9 +105,22 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']
 
 class ShoppableVideoSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.name')
+    product_price = serializers.ReadOnlyField(source='product.price')
+    product_offer_price = serializers.ReadOnlyField(source='product.offer_price')
+    product_image = serializers.SerializerMethodField()
+
+    def get_product_image(self, obj):
+        if obj.product.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.product.image.url)
+            return obj.product.image.url
+        return None
+
     class Meta:
         model = ShoppableVideo
-        fields = ['id', 'title', 'video_file', 'product', 'created_at']
+        fields = ['id', 'title', 'video_file', 'product', 'product_name', 'product_price', 'product_offer_price', 'product_image', 'created_at']
 
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.ReadOnlyField(source='category.name')
