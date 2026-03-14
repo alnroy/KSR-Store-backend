@@ -102,14 +102,31 @@ class OrderViewSet(viewsets.ModelViewSet):
         try:
             # Handle both stringified and direct list/dict data
             items_data = json.loads(items_json) if isinstance(items_json, str) else items_json
+            
+            missing_products = []
+            out_of_stock = []
+            
             for item in items_data:
-                product = Product.objects.get(id=item['product'])
-                if product.stock < item['quantity']:
-                    return Response({"error": f"Out of stock: {product.name}"}, status=status.HTTP_400_BAD_REQUEST)
-        except Product.DoesNotExist:
-            return Response({"error": "One or more products in your cart were not found."}, status=status.HTTP_404_NOT_FOUND)
-        except (json.JSONDecodeError, KeyError, TypeError):
-            return Response({"error": "Invalid format for items."}, status=status.HTTP_400_BAD_REQUEST)
+                p_id = item.get('product')
+                try:
+                    product = Product.objects.get(id=p_id)
+                    if product.stock < item['quantity']:
+                        out_of_stock.append(product.name)
+                except Product.DoesNotExist:
+                    missing_products.append(f"ID {p_id}")
+
+            if missing_products:
+                return Response({
+                    "error": f"Some items in your cart are no longer available: {', '.join(missing_products)}. Please remove them and try again."
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            if out_of_stock:
+                return Response({
+                    "error": f"The following items are out of stock: {', '.join(out_of_stock)}."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            return Response({"error": f"Invalid format for items: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
         # 2. Let the serializer handle creation (including stock deduction logic in its create method)
         serializer = self.get_serializer(data=request.data)
