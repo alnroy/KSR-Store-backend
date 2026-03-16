@@ -262,6 +262,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = ['product', 'product_name', 'product_image', 'product_description',
                   'product_category', 'quantity', 'price', 'selected_options']
+        # Price should be calculated by backend, but we need it for validation or initial data
+        # Actually, let's keep it but override it in OrderSerializer.create for security
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True) 
@@ -291,50 +293,62 @@ class OrderSerializer(serializers.ModelSerializer):
         return value
 
     def to_internal_value(self, data):
-        # We need to handle the case where 'items' comes in as a JSON string (typical for FormData)
-        # and ensure it's converted to a Python list before validation.
-        
-        # If data is a QueryDict (standard for multipart/form-data), we make a mutable copy.
-        # If it's a plain dict, we also make a copy.
-        if hasattr(data, 'copy'):
-            data = data.copy()
+        # 1. Handle QueryDict conversion to support complex nested objects and stringified JSON
+        if hasattr(data, 'dict'):
+            new_data = data.dict()
+            # items might be multiple in a QueryDict if not stringified, but here it's stringified
+            if 'items' in new_data and isinstance(new_data['items'], str):
+                try:
+                    new_data['items'] = json.loads(new_data['items'])
+                except json.JSONDecodeError:
+                    pass
         else:
-            data = dict(data)
-            
-        items_data = data.get('items')
-        if isinstance(items_data, str) and items_data:
-            try:
-                data['items'] = json.loads(items_data)
-            except json.JSONDecodeError:
-                # If it's invalid JSON, DRF will catch it later as 'items' won't be a list
-                pass
+            new_data = data.copy() if hasattr(data, 'copy') else dict(data)
+            if 'items' in new_data and isinstance(new_data['items'], str):
+                try:
+                    new_data['items'] = json.loads(new_data['items'])
+                except json.JSONDecodeError:
+                    pass
         
-        # Also ensure total_amount is not an empty string if it's missing (helps avoid validation errors)
-        if 'total_amount' in data and data['total_amount'] == '':
-            data['total_amount'] = '0.00'
+        # 2. Ensure total_amount is not an empty string
+        if 'total_amount' in new_data and new_data['total_amount'] == '':
+            new_data['total_amount'] = '0.00'
 
-        return super().to_internal_value(data)
+        return super().to_internal_value(new_data)
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
+        
+        # Security check: Recalculate total_amount on backend instead of trusting frontend
+        calculated_total = 0
+        
+        # Create the order first (we can update total later if mismatch)
         order = Order.objects.create(**validated_data)
 
         for item_data in items_data:
             product = item_data.get('product')
             quantity = item_data.get('quantity', 1)
-
-            # Snapshot the product name at purchase time
+            
             if product:
+                # Security: Force correct price from database
+                actual_price = product.offer_price if product.offer_price else product.price
+                item_data['price'] = actual_price
                 item_data['product_name'] = product.name
+                
+                # Increment running total
+                calculated_total += actual_price * quantity
 
-            OrderItem.objects.create(order=order, **item_data)
-
-            # Update stock; don't delete if it runs out, just keep at 0
-            if product:
+                # Deduct stock
                 product.stock -= quantity
                 if product.stock < 0:
                     product.stock = 0
                 product.save()
+
+            OrderItem.objects.create(order=order, **item_data)
+
+        # Update order with correctly calculated total
+        order.total_amount = calculated_total
+        order.save()
 
         return order
 
