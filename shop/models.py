@@ -7,6 +7,9 @@ class Brand(models.Model):
     name = models.CharField(max_length=100, unique=True)
     logo = models.FileField(upload_to='brands/', blank=True, null=True)
 
+    class Meta:
+        ordering = ['name']
+
     def __str__(self):
         return self.name
 
@@ -14,6 +17,10 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name_plural = "Categories"
 
     def __str__(self):
         return self.name
@@ -41,6 +48,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['-created_at']
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
@@ -94,6 +104,9 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.id} - {self.full_name}"
+    
+    class Meta:
+        ordering = ['-created_at']
     
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)

@@ -56,6 +56,23 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ('username', 'password', 'email')
 
+    def validate_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        if not any(char.isdigit() for char in value):
+            raise serializers.ValidationError("Password must contain at least one digit.")
+        if not any(char.isupper() for char in value):
+            raise serializers.ValidationError("Password must contain at least one uppercase letter.")
+        if not any(char.islower() for char in value):
+            raise serializers.ValidationError("Password must contain at least one lowercase letter.")
+        return value
+
+    def validate_username(self, value):
+        import re
+        if not re.match(r'^[\w.@+-]+$', value):
+            raise serializers.ValidationError("Username can only contain letters, numbers, and @/./+/-/_ characters.")
+        return value
+
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("An account with this email already exists.")
@@ -103,6 +120,16 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ['id', 'user', 'user_name', 'product', 'rating', 'comment', 'created_at']
         read_only_fields = ['user']
+
+    def validate_rating(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
+
+    def validate_comment(self, value):
+        if len(value) > 500:
+            raise serializers.ValidationError("Comment cannot exceed 500 characters.")
+        return value
 
 class ShoppableVideoSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(source='product.name')
@@ -217,13 +244,19 @@ class ProductSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     # Use stored snapshot first; only fall back to live product.name if snapshot is empty
     product_name = serializers.SerializerMethodField()
-    product_image = serializers.ImageField(source='product.image', read_only=True)
-    product_description = serializers.ReadOnlyField(source='product.description')
-    product_category = serializers.ReadOnlyField(source='product.category.name')
+    product_image = serializers.ImageField(source='product.image', read_only=True, allow_null=True)
+    product_description = serializers.SerializerMethodField()
+    product_category = serializers.SerializerMethodField()
 
     def get_product_name(self, obj):
         # Use snapshotted name first (survives product deletion)
         return obj.product_name or (obj.product.name if obj.product else 'Deleted Product')
+
+    def get_product_description(self, obj):
+        return obj.product.description if obj.product else "Description not available"
+
+    def get_product_category(self, obj):
+        return obj.product.category.name if obj.product and obj.product.category else "Other"
 
     class Meta:
         model = OrderItem
@@ -243,15 +276,43 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'user', 'created_at']
 
+    def validate_mobile_number(self, value):
+        import re
+        # Basic validation for 10-15 digit mobile numbers
+        if not re.match(r'^\+?1?\d{9,15}$', value):
+            raise serializers.ValidationError("Please enter a valid mobile number (10-15 digits).")
+        return value
+
+    def validate_pincode(self, value):
+        import re
+        # Validation for 6-digit Indian pincode (or adjust for international)
+        if not re.match(r'^\d{6}$', value):
+            raise serializers.ValidationError("Please enter a valid 6-digit pincode.")
+        return value
+
     def to_internal_value(self, data):
+        # We need to handle the case where 'items' comes in as a JSON string (typical for FormData)
+        # and ensure it's converted to a Python list before validation.
+        
+        # If data is a QueryDict (standard for multipart/form-data), we make a mutable copy.
+        # If it's a plain dict, we also make a copy.
+        if hasattr(data, 'copy'):
+            data = data.copy()
+        else:
+            data = dict(data)
+            
         items_data = data.get('items')
-        if isinstance(items_data, str):
+        if isinstance(items_data, str) and items_data:
             try:
-                mutable_data = data.copy()
-                mutable_data['items'] = json.loads(items_data)
-                return super().to_internal_value(mutable_data)
+                data['items'] = json.loads(items_data)
             except json.JSONDecodeError:
+                # If it's invalid JSON, DRF will catch it later as 'items' won't be a list
                 pass
+        
+        # Also ensure total_amount is not an empty string if it's missing (helps avoid validation errors)
+        if 'total_amount' in data and data['total_amount'] == '':
+            data['total_amount'] = '0.00'
+
         return super().to_internal_value(data)
 
     def create(self, validated_data):
@@ -268,13 +329,12 @@ class OrderSerializer(serializers.ModelSerializer):
 
             OrderItem.objects.create(order=order, **item_data)
 
-            # Update stock; delete product if it runs out
+            # Update stock; don't delete if it runs out, just keep at 0
             if product:
                 product.stock -= quantity
-                if product.stock <= 0:
-                    product.delete()
-                else:
-                    product.save()
+                if product.stock < 0:
+                    product.stock = 0
+                product.save()
 
         return order
 

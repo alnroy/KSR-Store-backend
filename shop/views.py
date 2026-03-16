@@ -110,9 +110,11 @@ class OrderViewSet(viewsets.ModelViewSet):
                 p_id = item.get('product')
                 try:
                     product = Product.objects.get(id=p_id)
-                    if product.stock < item['quantity']:
+                    # Convert quantity to int just in case it's a string
+                    qty = int(item.get('quantity', 1))
+                    if product.stock < qty:
                         out_of_stock.append(product.name)
-                except Product.DoesNotExist:
+                except (Product.DoesNotExist, ValueError):
                     missing_products.append(f"ID {p_id}")
 
             if missing_products:
@@ -130,7 +132,13 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         # 2. Let the serializer handle creation (including stock deduction logic in its create method)
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            # Flatten errors into a single string for better display on frontend
+            error_msg = ""
+            for field, errors in serializer.errors.items():
+                error_msg += f"{field}: {', '.join(errors)}. "
+            return Response({"error": error_msg.strip()}, status=status.HTTP_400_BAD_REQUEST)
+        
         order = serializer.save(user=request.user)
 
         return Response({
