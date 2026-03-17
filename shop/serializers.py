@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Brand, Category, Product, Order, OrderItem, Review, SavedAddress, ProductVariant, ProductAttribute, ProductImage, ShoppableVideo
+from django.db import transaction
 import json
 
 # ==========================================
@@ -316,6 +317,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
         return super().to_internal_value(new_data)
 
+    @transaction.atomic
     def create(self, validated_data):
         is_default_save = validated_data.pop('is_default', False)
         items_data = validated_data.pop('items')
@@ -327,23 +329,27 @@ class OrderSerializer(serializers.ModelSerializer):
         order = Order.objects.create(**validated_data)
 
         for item_data in items_data:
-            product = item_data.get('product')
+            product_id = item_data.get('product').id if hasattr(item_data.get('product'), 'id') else item_data.get('product')
             quantity = item_data.get('quantity', 1)
             
-            if product:
-                # Security: Force correct price from database
-                actual_price = product.offer_price if product.offer_price else product.price
-                item_data['price'] = actual_price
-                item_data['product_name'] = product.name
-                
-                # Increment running total
-                calculated_total += actual_price * quantity
+            # LOCK PRODUCT FOR UPDATE: Prevents other transactions from modifying stock simultaneously
+            product = Product.objects.select_for_update().get(id=product_id)
+            
+            # Security: Force correct price from database
+            actual_price = product.offer_price if product.offer_price else product.price
+            item_data['price'] = actual_price
+            item_data['product_name'] = product.name
+            item_data['product'] = product
+            
+            # Increment running total
+            calculated_total += actual_price * quantity
 
-                # Deduct stock
-                product.stock -= quantity
-                if product.stock < 0:
-                    product.stock = 0
-                product.save()
+            # Deduct stock
+            if product.stock < quantity:
+                raise serializers.ValidationError(f"Low Stock: {product.name} only has {product.stock} available.")
+                
+            product.stock -= quantity
+            product.save()
 
             OrderItem.objects.create(order=order, **item_data)
 
