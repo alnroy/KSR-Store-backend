@@ -37,30 +37,43 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('id', 'full_name', 'total_amount', 'status', 'colored_status', 'view_payment')
+    list_display = ('id', 'full_name', 'email', 'city', 'total_amount', 'status', 'view_payment', 'created_at')
+    list_filter = ('status', 'created_at', 'state', 'city')
+    search_fields = ('full_name', 'email', 'transaction_id', 'city', 'pincode')
     list_editable = ('status',) 
-    readonly_fields = ('payment_preview',)
-
-    def colored_status(self, obj):
-        colors = {
-            'PAID': 'green',
-            'PENDING': 'orange',
-            'FAILED': 'red',
-        }
-        return format_html(
-            '<span style="background: {}; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px;">Current: {}</span>', 
-            colors.get(obj.status, 'gray'), obj.status
-        )
-    colored_status.short_description = 'Visual Indicator'
+    
+    fieldsets = (
+        ('Customer Info', {
+            'fields': ('user', 'full_name', 'email', 'mobile_number')
+        }),
+        ('Shipping Intelligence (Structured)', {
+            'fields': (
+                'house_info', 'street_info', 'landmark', 
+                'city', 'state', 'pincode', 'country_region'
+            )
+        }),
+        ('Legacy Address Copy', {
+            'fields': ('address',),
+            'classes': ('collapse',)
+        }),
+        ('Payment Details', {
+            'fields': ('total_amount', 'transaction_id', 'payment_screenshot', 'payment_preview')
+        }),
+        ('Order Status', {
+            'fields': ('status', 'rejection_reason')
+        }),
+    )
+    
+    readonly_fields = ('payment_preview', 'created_at', 'updated_at')
 
     def view_payment(self, obj):
         if obj.payment_screenshot:
-            return format_html('<a href="{}" target="_blank">View Screenshot</a>', obj.payment_screenshot.url)
+            return format_html('<a href="{}" target="_blank">View Proof</a>', obj.payment_screenshot.url)
         return "No Proof"
 
     def payment_preview(self, obj):
         if obj.payment_screenshot:
-            return format_html('<img src="{}" style="max-width: 300px;" />', obj.payment_screenshot.url)
+            return format_html('<img src="{}" style="max-width: 300px; border-radius: 10px; border: 1px solid #ddd;" />', obj.payment_screenshot.url)
         return "No Payment Uploaded"
 
 @admin.register(ProductAttribute)
@@ -79,8 +92,9 @@ class ReviewAdmin(admin.ModelAdmin):
 
 @admin.register(SavedAddress)
 class SavedAddressAdmin(admin.ModelAdmin):
-    list_display = ('user', 'full_name', 'email', 'address')
-    search_fields = ('full_name', 'email', 'user__username')
+    list_display = ('user', 'full_name', 'city', 'state', 'pincode', 'is_default')
+    list_filter = ('is_default', 'state', 'city')
+    search_fields = ('full_name', 'email', 'user__username', 'city', 'pincode')
 
 @admin.register(ShoppableVideo)
 class ShoppableVideoAdmin(admin.ModelAdmin):

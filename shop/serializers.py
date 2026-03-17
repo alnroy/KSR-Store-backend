@@ -266,15 +266,15 @@ class OrderItemSerializer(serializers.ModelSerializer):
         # Actually, let's keep it but override it in OrderSerializer.create for security
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True) 
-
+    items = OrderItemSerializer(many=True)
+    is_default = serializers.BooleanField(write_only=True, required=False, default=False)
     class Meta:
         model = Order
         fields = [
             'id', 'user', 'full_name', 'email', 'total_amount', 'transaction_id', 'payment_screenshot', 
             'status', 'rejection_reason', 'items', 'created_at',
             'mobile_number', 'country_region', 'house_info', 'street_info',
-            'landmark', 'pincode', 'city', 'state', 'address'
+            'landmark', 'pincode', 'city', 'state', 'address', 'is_default'
         ]
         read_only_fields = ['id', 'user', 'created_at']
 
@@ -317,6 +317,7 @@ class OrderSerializer(serializers.ModelSerializer):
         return super().to_internal_value(new_data)
 
     def create(self, validated_data):
+        is_default_save = validated_data.pop('is_default', False)
         items_data = validated_data.pop('items')
         
         # Security check: Recalculate total_amount on backend instead of trusting frontend
@@ -349,6 +350,26 @@ class OrderSerializer(serializers.ModelSerializer):
         # Update order with correctly calculated total
         order.total_amount = calculated_total
         order.save()
+
+        # --- AUTO-SAVE ADDRESS TO PROFILE ---
+        if order.user and (is_default_save or not SavedAddress.objects.filter(user=order.user).exists()):
+            # Only save if this specific address (pincode + house_info) doesn't already exist for this user
+            if not SavedAddress.objects.filter(user=order.user, pincode=order.pincode, house_info=order.house_info).exists():
+                SavedAddress.objects.create(
+                    user=order.user,
+                    full_name=order.full_name,
+                    email=order.email,
+                    mobile_number=order.mobile_number,
+                    country_region=order.country_region,
+                    house_info=order.house_info,
+                    street_info=order.street_info,
+                    landmark=order.landmark,
+                    pincode=order.pincode,
+                    city=order.city,
+                    state=order.state,
+                    address=order.address,
+                    is_default=is_default_save
+                )
 
         return order
 
