@@ -286,11 +286,16 @@ class UserProfileView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        # Try to get phone number from default address
+        default_addr = SavedAddress.objects.filter(user=request.user, is_default=True).first()
+        mobile = default_addr.mobile_number if default_addr else ""
+        
         return Response({
             "id": request.user.id,
             "username": request.user.username,
             "email": request.user.email,
-            "is_staff": request.user.is_staff # <-- This is the magic key
+            "mobile": mobile,
+            "is_staff": request.user.is_staff
         })
     
 @api_view(['POST'])

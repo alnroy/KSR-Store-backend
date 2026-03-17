@@ -377,7 +377,7 @@ class SavedAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavedAddress
         fields = [
-            'id', 'full_name', 'email', 'mobile_number', 'country_region',
+            'id', 'address_label', 'full_name', 'email', 'mobile_number', 'country_region',
             'house_info', 'street_info', 'landmark', 'pincode', 'city',
             'state', 'is_default', 'address', 'created_at'
         ]

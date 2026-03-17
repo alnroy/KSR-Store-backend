@@ -145,6 +145,7 @@ class Review(models.Model):
     
 class SavedAddress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_addresses')
+    address_label = models.CharField("Address Label (e.g. Home, Office)", max_length=50, default="Home")
     full_name = models.CharField("Full Name", max_length=200)
     email = models.EmailField("Email")
     
