@@ -1,38 +1,27 @@
-from rest_framework import viewsets, filters, generics
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
-from django.contrib.auth.models import User
-from .models import Brand, Category, Product, Order, Review, OrderItem, SavedAddress, ShoppableVideo, ProductAttribute
-from .serializers import (
-    BrandSerializer,
-    CategorySerializer, 
-    ProductSerializer, 
-    OrderSerializer, 
-    RegisterSerializer,
-    SavedAddressSerializer,
-    ShoppableVideoSerializer
-)
-import random
-from django.core.mail import send_mail
-from django.conf import settings
-from rest_framework import status, views
-from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
-from .models import OTPRecord
-from .serializers import (
-    VerifyOTPSerializer,
-    PasswordResetRequestSerializer,
-    PasswordResetConfirmSerializer
-)
-from rest_framework.decorators import api_view, permission_classes
-from .serializers import ReviewSerializer
-# shop/views.py
 from rest_framework import viewsets, filters, generics, views, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from django_filters.rest_framework import DjangoFilterBackend
-from .permissions import IsAdminUserOrReadOnly 
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.conf import settings
+import random
 import json
-from .serializers import ProductAttributeSerializer
+
+from .models import (
+    Brand, Category, Product, Order, Review, OrderItem, 
+    SavedAddress, ShoppableVideo, ProductAttribute, OTPRecord
+)
+from .serializers import (
+    BrandSerializer, CategorySerializer, ProductSerializer, 
+    OrderSerializer, RegisterSerializer, SavedAddressSerializer,
+    ShoppableVideoSerializer, ReviewSerializer, VerifyOTPSerializer,
+    PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
+    ProductAttributeSerializer
+)
+from .permissions import IsAdminUserOrReadOnly
 
 class RegisterView(generics.CreateAPIView):
     """Handles User Registration and sends the initial OTP."""
