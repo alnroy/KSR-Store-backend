@@ -13,7 +13,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    # Fallback if python-dotenv is not installed
+    def load_dotenv(*args, **kwargs): pass
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,11 +27,12 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-default-key-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+# TEMPORARY: Set to True to debug the 400 error
+DEBUG = True
 
 # Robust ALLOWED_HOSTS parsing
 hosts_str = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,alnroy.pythonanywhere.com')
-ALLOWED_HOSTS = [h.strip() for h in hosts_str.split(',') if h.strip()]
+ALLOWED_HOSTS = ['*'] # TEMPORARY: Be very permissive to debug 400
 
 
 # Application definition
@@ -133,7 +138,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Security Settings for Production
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
+    SECURE_SSL_REDIRECT = False # Disabling temporarily to debug proxy issues
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True

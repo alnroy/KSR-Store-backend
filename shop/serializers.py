@@ -379,6 +379,28 @@ class OrderSerializer(serializers.ModelSerializer):
 
         return order
 
+        # --- AUTO-SAVE ADDRESS TO PROFILE ---
+        if order.user and (is_default_save or not SavedAddress.objects.filter(user=order.user).exists()):
+            # Only save if this specific address (pincode + house_info) doesn't already exist for this user
+            if not SavedAddress.objects.filter(user=order.user, pincode=order.pincode, house_info=order.house_info).exists():
+                SavedAddress.objects.create(
+                    user=order.user,
+                    full_name=order.full_name,
+                    email=order.email,
+                    mobile_number=order.mobile_number,
+                    country_region=order.country_region,
+                    house_info=order.house_info,
+                    street_info=order.street_info,
+                    landmark=order.landmark,
+                    pincode=order.pincode,
+                    city=order.city,
+                    state=order.state,
+                    address=order.address,
+                    is_default=is_default_save
+                )
+
+        return order
+
 class SavedAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = SavedAddress
