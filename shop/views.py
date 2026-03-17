@@ -57,7 +57,7 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 class AttributeViewSet(viewsets.ModelViewSet):
-    queryset = ProductAttribute.objects.all()
+    queryset = ProductAttribute.objects.all().order_by('name')
     serializer_class = ProductAttributeSerializer
     permission_classes = [IsAdminUserOrReadOnly]
 
@@ -103,8 +103,8 @@ class OrderViewSet(viewsets.ModelViewSet):
             # Handle both stringified and direct list/dict data
             items_data = json.loads(items_json) if isinstance(items_json, str) else items_json
             
-            missing_products = []
-            out_of_stock = []
+            missing_products: list[str] = []
+            out_of_stock: list[str] = []
             
             for item in items_data:
                 p_id = item.get('product')
@@ -318,7 +318,7 @@ def create_review(request, pk):
     has_purchased = OrderItem.objects.filter(
         product=product,
         order__user=request.user,
-        order__status__in=['PAID', 'SHIPPED'] # Only allow if the order is actually completed
+        order__status__in=['PAID', 'SHIPPED', 'DELIVERED'] # Allow reviews if paid, shipped or delivered
     ).exists()
 
     if not has_purchased:
