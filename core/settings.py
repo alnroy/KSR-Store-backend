@@ -23,9 +23,11 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-default-key-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,alnroy.pythonanywhere.com').split(',')
+# Robust ALLOWED_HOSTS parsing
+hosts_str = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,alnroy.pythonanywhere.com')
+ALLOWED_HOSTS = [h.strip() for h in hosts_str.split(',') if h.strip()]
 
 
 # Application definition
@@ -140,8 +142,14 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    # Important for PythonAnywhere/Heroku behind a proxy
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+# CORS & CSRF
+cors_str = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000')
+CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_str.split(',') if o.strip()]
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in cors_str.split(',') if o.strip()]
+
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 
