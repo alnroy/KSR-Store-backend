@@ -13,6 +13,7 @@ from .views import (
     PasswordResetRequestView,
     PasswordResetConfirmView,
     create_review,
+    delete_review,
     SavedAddressViewSet,
     ShoppableVideoViewSet,
     AttributeViewSet
@@ -33,8 +34,9 @@ urlpatterns = [
     # Include the router URLs
     path('', include(router.urls)),
     
-    # 2. NEW: The Review Endpoint (Must match the Next.js axios call)
+    # 2. NEW: Review Endpoints
     path('products/<int:pk>/review/', create_review, name='create-review'),
+    path('reviews/<int:pk>/', delete_review, name='delete-review'),
     
     # Custom Authentication & OTP URLs
     path('auth/register/', RegisterView.as_view(), name='register'),

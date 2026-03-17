@@ -337,6 +337,21 @@ def create_review(request, pk):
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_review(request, pk):
+    try:
+        review = Review.objects.get(pk=pk)
+    except Review.DoesNotExist:
+        return Response({'error': 'Review not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # SECURITY: Ensure only the owner or an admin can delete the review
+    if review.user != request.user and not request.user.is_staff:
+        return Response({'error': 'Unauthorized: You can only delete your own reviews.'}, status=status.HTTP_403_FORBIDDEN)
+    
+    review.delete()
+    return Response({'message': 'Review deleted successfully'}, status=status.HTTP_200_OK)
+
 class SavedAddressViewSet(viewsets.ModelViewSet):
     serializer_class = SavedAddressSerializer
     permission_classes = [IsAuthenticated] # Strictly for logged-in users
