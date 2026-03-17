@@ -27,12 +27,11 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-default-key-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# TEMPORARY: Set to True to debug the 400 error
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 # Robust ALLOWED_HOSTS parsing
 hosts_str = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,alnroy.pythonanywhere.com')
-ALLOWED_HOSTS = ['*'] # TEMPORARY: Be very permissive to debug 400
+ALLOWED_HOSTS = [h.strip() for h in hosts_str.split(',') if h.strip()]
 
 
 # Application definition
@@ -138,7 +137,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Security Settings for Production
 if not DEBUG:
-    SECURE_SSL_REDIRECT = False # Disabling temporarily to debug proxy issues
+    SECURE_SSL_REDIRECT = True # Re-enabling for real-world production
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
