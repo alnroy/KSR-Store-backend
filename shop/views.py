@@ -51,17 +51,17 @@ class AttributeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUserOrReadOnly]
 
 class BrandViewSet(viewsets.ModelViewSet):
-    queryset = Brand.objects.all()
+    queryset = Brand.objects.all().order_by('name')
     serializer_class = BrandSerializer
     permission_classes = [IsAdminUserOrReadOnly]  # Public read, admin write/delete
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
     permission_classes = [IsAdminUserOrReadOnly]
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.all().order_by('-created_at')
     serializer_class = ProductSerializer
     permission_classes = [IsAdminUserOrReadOnly]  # Read is public, write/delete is admin-only
     filter_backends = [filters.SearchFilter, DjangoFilterBackend]
@@ -365,6 +365,6 @@ class SavedAddressViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 class ShoppableVideoViewSet(viewsets.ModelViewSet):
-    queryset = ShoppableVideo.objects.all()
+    queryset = ShoppableVideo.objects.all().order_by('-created_at')
     serializer_class = ShoppableVideoSerializer
     permission_classes = [IsAdminUserOrReadOnly]
