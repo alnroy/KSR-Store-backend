@@ -139,6 +139,7 @@ class Review(models.Model):
 
     class Meta:
         unique_together = ('product', 'user')
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.rating} Stars by {self.user.username} on {self.product.name}"
@@ -162,6 +163,9 @@ class SavedAddress(models.Model):
     
     address = models.TextField("Full Delivery Address (Legacy)", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
         if self.is_default:
@@ -195,6 +199,9 @@ class ShoppableVideo(models.Model):
     video_file = models.FileField(upload_to='videos/')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='shoppable_videos')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"Video: {self.title} for {self.product.name}"
