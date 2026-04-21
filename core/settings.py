@@ -186,7 +186,7 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 # 3. What the user sees in their "From" field
-DEFAULT_FROM_EMAIL = 'ProFish Gear <noreply.profishgear@gmail.com>'
+DEFAULT_FROM_EMAIL = 'KSR Bait & Tackle <ksraquaworld1@gmail.com>'
 
 
 # settings.py
