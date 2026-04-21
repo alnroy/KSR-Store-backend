@@ -168,12 +168,22 @@ def generate_otp():
     return str(random.randint(100000, 999999))
 
 def send_otp_email(email, otp, is_reset=False):
-    """Sends the OTP to the user. (Currently configured to print to your terminal)."""
+    """Sends the OTP to the user. (Handles network failures gracefully for PythonAnywhere free tier)."""
     subject = 'ProFish Gear: Password Reset OTP' if is_reset else 'ProFish Gear: Verify your Account'
     message = f'Your 6-digit OTP is: {otp}\n\nThis code will expire in 10 minutes.'
-    # Ensure DEFAULT_FROM_EMAIL is set in settings.py
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@profishgear.com')
-    send_mail(subject, message, from_email, [email], fail_silently=False)
+    
+    try:
+        send_mail(subject, message, from_email, [email], fail_silently=False)
+        print(f"✅ EMAIL SENT SUCCESSFULLY TO {email}")
+    except Exception as e:
+        print("==================================================")
+        print("🚨 EMAIL SENDING FAILED (Likely PythonAnywhere Free Tier SMTP Block)")
+        print(f"ERROR: {str(e)}")
+        print(f"📩 TARGET EMAIL: {email}")
+        print(f"🔑 OTP CODE: {otp}")
+        print("👉 You can find this OTP in your PythonAnywhere Server/Error logs.")
+        print("==================================================")
 
 class VerifyOTPView(views.APIView):
     """Verifies the OTP and activates the account."""
